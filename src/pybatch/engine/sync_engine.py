@@ -1,7 +1,8 @@
-from collections.abc import Iterable
+from collections.abc import Iterable,Iterator
 
 from pybatch.core.errors import UnsupportedOperationError
 from pybatch.core.models import (
+    Batch,
     EngineConfig,
     JobResult,
     Operation,
@@ -35,6 +36,7 @@ class SyncEngine:
         """The configuration for the engine."""
         return self._config
 
+
     def execute(
         self,
         job: VectorJob,
@@ -48,7 +50,8 @@ class SyncEngine:
 
         if handler is None:
             raise UnsupportedOperationError(
-                f"No handler registered for {job.operation.value}."
+                f"No handler registered for "
+                f"{job.operation.value}."
             )
 
         value = handler.execute(
@@ -61,6 +64,40 @@ class SyncEngine:
             operation=job.operation,
             value=value,
         )
+
+    def execute_batch(
+        self,
+        batch: Batch
+    ) -> tuple[
+        JobResult[ResultValue],
+        ...,
+    ]:
+        """Execute a batch of jobs.
+
+        Args:
+            batch: The batch of jobs to execute.
+        """
+        return tuple(
+            self.execute(job)
+            for job in batch.jobs
+        )
+    
+    def iter_batch_results(
+        self,
+        batches: Iterable[Batch],
+    ) -> Iterator[
+        tuple[
+            JobResult[ResultValue],
+            ...,
+        ]
+    ]:
+        """Iterate over the results of a batch of jobs.
+
+        Args:
+            batches: The batches of jobs to iterate over.
+        """
+        for batch in batches:
+            yield self.execute_batch(batch)
 
     @staticmethod
     def _build_registry(
