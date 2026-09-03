@@ -4,6 +4,7 @@ from pybatch.core.models import (
     FloatArray,
     Operation,
     ResultValue,
+    TopKResult,
     VectorJob,
 )
 from pybatch.operations import (
@@ -13,6 +14,7 @@ from pybatch.operations import (
     normalize,
     top_k_similarity,
 )
+from pybatch.core.protocols import OperationHandler
 
 
 def _require_right(
@@ -55,7 +57,7 @@ class NormalizeHandler:
         job: VectorJob,
         *,
         config: EngineConfig,
-    ) -> ResultValue:
+    ) -> FloatArray:
         return normalize(
             job.left,
             config=config,
@@ -73,7 +75,7 @@ class DotProductHandler:
         job: VectorJob,
         *,
         config: EngineConfig,
-    ) -> ResultValue:
+    ) -> float:
         return dot_product(
             job.left,
             _require_right(job),
@@ -92,7 +94,7 @@ class CosineSimilarityHandler:
         job: VectorJob,
         *,
         config: EngineConfig,
-    ) -> ResultValue:
+    ) -> float:
         return cosine_similarity(
             job.left,
             _require_right(job),
@@ -111,7 +113,7 @@ class MatrixMultiplyHandler:
         job: VectorJob,
         *,
         config: EngineConfig,
-    ) -> ResultValue:
+    ) -> FloatArray:
         return matrix_multiply(
             job.left,
             _require_right(job),
@@ -130,7 +132,7 @@ class TopKSimilarityHandler:
         job: VectorJob,
         *,
         config: EngineConfig,
-    ) -> ResultValue:
+    ) -> TopKResult:
         return top_k_similarity(
             job.left,
             _require_right(job),
@@ -142,8 +144,10 @@ class TopKSimilarityHandler:
 from pybatch.core.protocols import OperationHandler
 
 
-def default_handlers() -> tuple[OperationHandler, ...]:
-    """Get the default handlers for the operations."""
+def default_handlers() -> tuple[
+    OperationHandler[ResultValue],
+    ...,
+]:
     return (
         NormalizeHandler(),
         DotProductHandler(),

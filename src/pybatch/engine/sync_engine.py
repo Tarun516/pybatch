@@ -5,6 +5,7 @@ from pybatch.core.models import (
     EngineConfig,
     JobResult,
     Operation,
+    ResultValue,
     VectorJob,
 )
 from pybatch.core.protocols import OperationHandler
@@ -15,8 +16,14 @@ class SyncEngine:
     def __init__(
         self,
         config: EngineConfig | None = None,
-        handlers: Iterable[OperationHandler] | None = None,
+        handlers: Iterable[OperationHandler[ResultValue]] | None = None,
     ) -> None:
+        """Initialize the engine.
+
+        Args:
+            config: The configuration for the engine.
+            handlers: The handlers for the engine.
+        """
         self._config = config or EngineConfig()
 
         selected_handlers = default_handlers() if handlers is None else handlers
@@ -25,12 +32,18 @@ class SyncEngine:
 
     @property
     def config(self) -> EngineConfig:
+        """The configuration for the engine."""
         return self._config
 
     def execute(
         self,
         job: VectorJob,
-    ) -> JobResult:
+    ) -> JobResult[ResultValue]:
+        """Execute a job.
+
+        Args:
+            job: The job to execute.
+        """
         handler = self._handlers.get(job.operation)
 
         if handler is None:
@@ -51,11 +64,14 @@ class SyncEngine:
 
     @staticmethod
     def _build_registry(
-        handlers: Iterable[OperationHandler],
-    ) -> dict[Operation, OperationHandler]:
+        handlers: Iterable[OperationHandler[ResultValue]],
+    ) -> dict[
+        Operation,
+        OperationHandler[ResultValue],
+    ]:
         registry: dict[
             Operation,
-            OperationHandler,
+            OperationHandler[ResultValue],
         ] = {}
 
         for handler in handlers:

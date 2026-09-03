@@ -117,12 +117,12 @@ type ResultValue = FloatArray | float | TopKResult
 
 
 @dataclass(frozen=True, slots=True)
-class JobResult:
+class JobResult[T]:
     """A result of a single vector operation."""
 
     job_id: str
     operation: Operation
-    value: ResultValue
+    value: T
 
 
 @dataclass(frozen=True, slots=True)
