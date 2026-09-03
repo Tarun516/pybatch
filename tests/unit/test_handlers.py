@@ -81,6 +81,8 @@ def test_dot_product_handler_requires_right_operand(
             job,
             config=config,
         )
+
+
 def inspect_handler(
     handler: DotProductHandler,
 ) -> None:

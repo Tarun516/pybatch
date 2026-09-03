@@ -40,3 +40,7 @@ class InvalidConfigurationError(ValidationError):
 
 class UnsupportedOperationError(PyBatchError):
     """Raised when the requested operation is not supported."""
+
+
+class InvalidBatchSizeError(ValidationError):
+    """Raised when a batch size is not greater than zero."""
