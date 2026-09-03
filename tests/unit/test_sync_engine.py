@@ -178,3 +178,26 @@ def test_default_config_is_created() -> None:
     engine = SyncEngine()
 
     assert engine.config == EngineConfig()
+
+
+def test_engine_can_use_custom_handler_registry() -> None:
+    from pybatch.engine.handlers import NormalizeHandler
+
+    engine = SyncEngine(
+        handlers=[
+            NormalizeHandler(),
+        ]
+    )
+
+    job = VectorJob(
+        operation=Operation.DOT_PRODUCT,
+        left=np.array([1.0, 2.0]),
+        right=np.array([3.0, 4.0]),
+    )
+
+    from pybatch.core.errors import UnsupportedOperationError
+
+    with pytest.raises(
+        UnsupportedOperationError,
+    ):
+        engine.execute(job)

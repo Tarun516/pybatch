@@ -1,29 +1,27 @@
-from pybatch.core.errors import (
-    MissingOperandError,
-    UnsupportedOperationError,
-)
+from collections.abc import Iterable
+
+from pybatch.core.errors import UnsupportedOperationError
 from pybatch.core.models import (
     EngineConfig,
     JobResult,
     Operation,
-    ResultValue,
     VectorJob,
 )
-from pybatch.operations import (
-    cosine_similarity,
-    dot_product,
-    matrix_multiply,
-    normalize,
-    top_k_similarity,
-)
+from pybatch.core.protocols import OperationHandler
+from pybatch.engine.handlers import default_handlers
 
 
 class SyncEngine:
     def __init__(
         self,
         config: EngineConfig | None = None,
+        handlers: Iterable[OperationHandler] | None = None,
     ) -> None:
         self._config = config or EngineConfig()
+
+        selected_handlers = default_handlers() if handlers is None else handlers
+
+        self._handlers = self._build_registry(selected_handlers)
 
     @property
     def config(self) -> EngineConfig:
@@ -33,7 +31,17 @@ class SyncEngine:
         self,
         job: VectorJob,
     ) -> JobResult:
-        value = self._execute_operation(job)
+        handler = self._handlers.get(job.operation)
+
+        if handler is None:
+            raise UnsupportedOperationError(
+                f"No handler registered for {job.operation.value}."
+            )
+
+        value = handler.execute(
+            job,
+            config=self._config,
+        )
 
         return JobResult(
             job_id=job.job_id,
@@ -41,76 +49,16 @@ class SyncEngine:
             value=value,
         )
 
-    def _execute_operation(
-        self,
-        job: VectorJob,
-    ) -> ResultValue:
-        match job.operation:
-            case Operation.NORMALIZE:
-                return normalize(
-                    job.left,
-                    config=self._config,
-                )
-
-            case Operation.DOT_PRODUCT:
-                right = self._require_right(job)
-
-                return dot_product(
-                    job.left,
-                    right,
-                    config=self._config,
-                )
-
-            case Operation.COSINE_SIMILARITY:
-                right = self._require_right(job)
-
-                return cosine_similarity(
-                    job.left,
-                    right,
-                    config=self._config,
-                )
-
-            case Operation.MATRIX_MULTIPLY:
-                right = self._require_right(job)
-
-                return matrix_multiply(
-                    job.left,
-                    right,
-                    config=self._config,
-                )
-
-            case Operation.TOP_K_SIMILARITY:
-                right = self._require_right(job)
-                top_k = self._require_top_k(job)
-
-                return top_k_similarity(
-                    job.left,
-                    right,
-                    top_k=top_k,
-                    config=self._config,
-                )
-
-            case _:
-                raise UnsupportedOperationError(
-                    f"Unsupported operation: {job.operation!r}."
-                )
-
     @staticmethod
-    def _require_right(
-        job: VectorJob,
-    ):
-        if job.right is None:
-            raise MissingOperandError(
-                f"{job.operation.value} requires a right operand."
-            )
+    def _build_registry(
+        handlers: Iterable[OperationHandler],
+    ) -> dict[Operation, OperationHandler]:
+        registry: dict[
+            Operation,
+            OperationHandler,
+        ] = {}
 
-        return job.right
+        for handler in handlers:
+            registry[handler.operation] = handler
 
-    @staticmethod
-    def _require_top_k(
-        job: VectorJob,
-    ) -> int:
-        if job.top_k is None:
-            raise MissingOperandError("top_k_similarity requires top_k.")
-
-        return job.top_k
+        return registry
