@@ -26,10 +26,7 @@ def test_timed_preserves_function_metadata() -> None:
 
     assert example.__name__ == "example"
     print(example.__doc__)
-    assert (
-        example.__doc__
-        == "Example function."
-    )
+    assert example.__doc__ == "Example function."
 
 
 def test_timed_logs_execution_time(
@@ -47,7 +44,4 @@ def test_timed_logs_execution_time(
 
     assert result == 42
     print(caplog.text)
-    assert (
-        "example completed in"
-        in caplog.text
-    )
+    assert "example completed in" in caplog.text

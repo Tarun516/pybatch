@@ -1,4 +1,4 @@
-from collections.abc import Iterable,Iterator
+from collections.abc import Iterable, Iterator
 
 from pybatch.core.errors import UnsupportedOperationError
 from pybatch.core.models import (
@@ -14,6 +14,7 @@ from pybatch.engine.handlers import default_handlers
 from pybatch.observability import timed
 
 # SyncEngine is a synchronous engine that executes jobs in a synchronous manner.
+
 
 class SyncEngine:
     def __init__(
@@ -38,7 +39,6 @@ class SyncEngine:
         """The configuration for the engine."""
         return self._config
 
-
     def execute(
         self,
         job: VectorJob,
@@ -52,8 +52,7 @@ class SyncEngine:
 
         if handler is None:
             raise UnsupportedOperationError(
-                f"No handler registered for "
-                f"{job.operation.value}."
+                f"No handler registered for {job.operation.value}."
             )
 
         value = handler.execute(
@@ -66,10 +65,10 @@ class SyncEngine:
             operation=job.operation,
             value=value,
         )
+
     @timed
     def execute_batch(
-        self,
-        batch: Batch
+        self, batch: Batch
     ) -> tuple[
         JobResult[ResultValue],
         ...,
@@ -79,11 +78,8 @@ class SyncEngine:
         Args:
             batch: The batch of jobs to execute.
         """
-        return tuple(
-            self.execute(job)
-            for job in batch.jobs
-        )
-    
+        return tuple(self.execute(job) for job in batch.jobs)
+
     def iter_batch_results(
         self,
         batches: Iterable[Batch],
