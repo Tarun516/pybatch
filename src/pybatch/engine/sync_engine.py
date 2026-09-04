@@ -11,7 +11,9 @@ from pybatch.core.models import (
 )
 from pybatch.core.protocols import OperationHandler
 from pybatch.engine.handlers import default_handlers
+from pybatch.observability import timed
 
+# SyncEngine is a synchronous engine that executes jobs in a synchronous manner.
 
 class SyncEngine:
     def __init__(
@@ -64,7 +66,7 @@ class SyncEngine:
             operation=job.operation,
             value=value,
         )
-
+    @timed
     def execute_batch(
         self,
         batch: Batch
